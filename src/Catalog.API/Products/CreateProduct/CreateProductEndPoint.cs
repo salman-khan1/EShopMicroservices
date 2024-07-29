@@ -1,34 +1,29 @@
 ﻿namespace Catalog.API.Products.CreateProduct;
 
+public record CreateProductRequest(string Name, List<string> Category, string Description, string ImageFile, decimal Price);
 
-public record CreateProductCommand(string Name, List<string> Category, string Description, string ImageFile, decimal Price)
-        :ICommand<CreateProductResult>;
+public record CreateProductResponse(Guid Id);
 
-public record CreateProductResult(Guid Id);
-
-internal class CreateProductEndPoint (IDocumentSession session)
-    : ICommandHandler<CreateProductCommand, CreateProductResult>
+public class CreateProductEndpoint : ICarterModule
 {
-    public async Task<CreateProductResult> Handle(CreateProductCommand command, CancellationToken cancellationToken)
+    public void AddRoutes(IEndpointRouteBuilder app)
     {
-        //create a product entity form command object
-        //save to database
-        //return CreateProductResult result
+        app.MapPost("/products",
+                async (CreateProductRequest request, ISender sender) =>
+                {
+                    var command = request.Adapt<CreateProductCommand>();
 
+                    var result = await sender.Send(command);
 
-        //create a product entity form command object
-        var product = new Product{
-           Name = command.Name,
-           Category = command.Category,
-           Description = command.Description,
-           ImageFile = command.ImageFile,
-           Price = command.Price
-        };
+                    var response = result.Adapt<CreateProductResponse>();
 
-        //save to database
-        session.Store(product);
-        await session.SaveChangesAsync(cancellationToken);
-        //return result
-        return new CreateProductResult(product.Id);
+                    return Results.Created($"/products/{response.Id}", response);
+
+                })
+            .WithName("CreateProduct")
+            .Produces<CreateProductResponse>(StatusCodes.Status201Created)
+            .ProducesProblem(StatusCodes.Status400BadRequest)
+            .WithSummary("Create Product")
+            .WithDescription("Create Product");
     }
 }
