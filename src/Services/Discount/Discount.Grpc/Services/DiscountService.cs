@@ -14,10 +14,7 @@ public class DiscountService
     {
         var coupon = await dbContext
             .Coupons
-            .FirstOrDefaultAsync(x => x.ProductName == request.ProductName);
-
-        if (coupon is null)
-            coupon = new Coupon { ProductName = "No Discount", Amount = 0, Description = "No Discount Desc" };
+            .FirstOrDefaultAsync(x => x.ProductName == request.ProductName) ?? new Coupon { ProductName = "No Discount", Amount = 0, Description = "No Discount Desc" };
 
         logger.LogInformation("Discount is retrieved for ProductName : {productName}, Amount : {amount}", coupon.ProductName, coupon.Amount);
 
